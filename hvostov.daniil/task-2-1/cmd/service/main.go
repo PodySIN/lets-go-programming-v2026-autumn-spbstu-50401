@@ -12,7 +12,6 @@ func main() {
 	}
 
 	for range departmentCount {
-		minTemp, maxTemp := 15, 30
 		var employeeCount int
 
 		if _, err := fmt.Scan(&employeeCount); err != nil {
@@ -21,9 +20,13 @@ func main() {
 			return
 		}
 
+		minTemp, maxTemp := 15, 30
+
 		for range employeeCount {
-			var action string
-			var value int
+			var (
+				action string
+				value  int
+			)
 
 			if _, err := fmt.Scan(&action, &value); err != nil {
 				fmt.Println(err)
