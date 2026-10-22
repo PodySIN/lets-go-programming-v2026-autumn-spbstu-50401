@@ -4,24 +4,30 @@ import "fmt"
 
 func main() {
 	var departmentCount int
+
 	if _, err := fmt.Scan(&departmentCount); err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
-	for i := 0; i < departmentCount; i++ {
-		var minTemp, maxTemp int = 15, 30
+	for range departmentCount {
+		minTemp, maxTemp := 15, 30
 		var employeeCount int
+
 		if _, err := fmt.Scan(&employeeCount); err != nil {
 			fmt.Println(err)
+
 			return
 		}
 
-		for j := 0; j < employeeCount; j++ {
+		for range employeeCount {
 			var action string
 			var value int
+
 			if _, err := fmt.Scan(&action, &value); err != nil {
 				fmt.Println(err)
+
 				return
 			}
 
@@ -32,6 +38,7 @@ func main() {
 				maxTemp = min(maxTemp, value)
 			default:
 				fmt.Println("Incorrect action: type >=/<=")
+
 				return
 			}
 
