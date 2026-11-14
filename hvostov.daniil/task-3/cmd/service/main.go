@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"flag"
+	"fmt"
+)
 
 func main() {
-	fmt.Println("Init")
+	configPath := flag.String("config", "config.yaml", "path to config file")
+	flag.Parse()
+	fmt.Println("Config: ", *configPath)
 }
