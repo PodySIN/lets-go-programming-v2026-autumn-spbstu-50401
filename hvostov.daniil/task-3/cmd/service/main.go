@@ -1,16 +1,30 @@
 package main
 
 import (
+	"bytes"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
 
+	"golang.org/x/net/html/charset"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
 	InputFile  string `yaml:"input-file"`
 	OutputFile string `yaml:"output-file"`
+}
+
+type ValCurs struct {
+	XMLName xml.Name `xml:"ValCurs"`
+	Valutes []Valute `xml:"Valute"`
+}
+
+type Valute struct {
+	NumCode  int    `xml:"NumCode"`
+	CharCode string `xml:"CharCode"`
+	Value    string `xml:"Value"`
 }
 
 func loadConfig(path string) (Config, error) {
@@ -40,6 +54,24 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
+func loadXML(path string) (ValCurs, error) {
+	var valCurs ValCurs
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return valCurs, fmt.Errorf("read input-file %q: %w", path, err)
+	}
+
+	decoder := xml.NewDecoder(bytes.NewReader(data))
+	decoder.CharsetReader = charset.NewReaderLabel
+
+	if err := decoder.Decode(&valCurs); err != nil {
+		return valCurs, fmt.Errorf("parse XML %q: %w", path, err)
+	}
+
+	return valCurs, nil
+}
+
 func main() {
 	configPath := flag.String("config", "", "path to config file")
 	flag.Parse()
@@ -49,5 +81,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(config)
+	valCurs, err := loadXML(config.InputFile)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("valutes:", len(valCurs.Valutes))
+	for _, v := range valCurs.Valutes {
+		fmt.Printf("%d %s %s\n", v.NumCode, v.CharCode, v.Value)
+	}
 }
