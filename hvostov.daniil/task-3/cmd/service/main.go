@@ -6,6 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 
 	"golang.org/x/net/html/charset"
 	"gopkg.in/yaml.v3"
@@ -72,6 +75,28 @@ func loadXML(path string) (ValCurs, error) {
 	return valCurs, nil
 }
 
+func parseValue(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	s = strings.ReplaceAll(s, ",", ".")
+	return strconv.ParseFloat(s, 64)
+}
+
+func sortValutes(valutes []Valute) error {
+	for _, v := range valutes {
+		if _, err := parseValue(v.Value); err != nil {
+			return fmt.Errorf("parse value for %q: %w", v.CharCode, err)
+		}
+	}
+
+	sort.Slice(valutes, func(i, j int) bool {
+		vi, _ := parseValue(valutes[i].Value)
+		vj, _ := parseValue(valutes[j].Value)
+		return vi > vj
+	})
+
+	return nil
+}
+
 func main() {
 	configPath := flag.String("config", "", "path to config file")
 	flag.Parse()
@@ -83,6 +108,10 @@ func main() {
 
 	valCurs, err := loadXML(config.InputFile)
 	if err != nil {
+		panic(err)
+	}
+
+	if err := sortValutes(valCurs.Valutes); err != nil {
 		panic(err)
 	}
 
