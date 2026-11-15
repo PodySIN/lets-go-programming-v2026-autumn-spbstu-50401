@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	ErrConfigPathRequired = errors.New("Use (--config or -config) to indicate configuration path")
+	ErrConfigPathRequired = errors.New("use (--config or -config) to indicate configuration path")
 	ErrInputFileRequired  = errors.New("input-file is required")
 	ErrOutputFileRequired = errors.New("output-file is required")
 )
