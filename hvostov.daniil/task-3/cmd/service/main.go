@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -19,6 +20,12 @@ import (
 const (
 	dirPermissions  = 0o750
 	filePermissions = 0o600
+)
+
+var (
+	ErrConfigPathRequired = errors.New("Use (--config or -config) to indicate configuration path")
+	ErrInputFileRequired  = errors.New("input-file is required")
+	ErrOutputFileRequired = errors.New("output-file is required")
 )
 
 type Config struct {
@@ -73,7 +80,7 @@ func loadConfig(path string) (Config, error) {
 	var config Config
 
 	if path == "" {
-		return config, fmt.Errorf("Use (--config or -config) to indicate configuration path")
+		return config, ErrConfigPathRequired
 	}
 
 	data, err := os.ReadFile(path)
@@ -86,11 +93,11 @@ func loadConfig(path string) (Config, error) {
 	}
 
 	if config.InputFile == "" {
-		return config, fmt.Errorf("config %q: input-file is required", path)
+		return config, fmt.Errorf("config %q: %w", path, ErrInputFileRequired)
 	}
 
 	if config.OutputFile == "" {
-		return config, fmt.Errorf("config %q: output-file is required", path)
+		return config, fmt.Errorf("config %q: %w", path, ErrOutputFileRequired)
 	}
 
 	return config, nil
@@ -114,30 +121,30 @@ func loadXML(path string) (ValCurs, error) {
 	return valCurs, nil
 }
 
-func parseValue(s string) (float64, error) {
-	s = strings.TrimSpace(s)
-	s = strings.ReplaceAll(s, ",", ".")
+func parseValue(value string) (float64, error) {
+	value = strings.TrimSpace(value)
+	value = strings.ReplaceAll(value, ",", ".")
 
-	v, err := strconv.ParseFloat(s, 64)
+	parsed, err := strconv.ParseFloat(value, 64)
 	if err != nil {
-		return 0, fmt.Errorf("parse %q: %w", s, err)
+		return 0, fmt.Errorf("parse %q: %w", value, err)
 	}
 
-	return v, nil
+	return parsed, nil
 }
 
 func convertToOutput(valutes []Valute) ([]OutputValute, error) {
 	output := make([]OutputValute, 0, len(valutes))
 
-	for _, v := range valutes {
-		value, err := parseValue(v.Value)
+	for _, valute := range valutes {
+		value, err := parseValue(valute.Value)
 		if err != nil {
-			return nil, fmt.Errorf("value of %q: %w", v.CharCode, err)
+			return nil, fmt.Errorf("value of %q: %w", valute.CharCode, err)
 		}
 
 		output = append(output, OutputValute{
-			NumCode:  v.NumCode,
-			CharCode: v.CharCode,
+			NumCode:  valute.NumCode,
+			CharCode: valute.CharCode,
 			Value:    value,
 		})
 	}
