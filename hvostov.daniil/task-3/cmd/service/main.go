@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,6 +30,12 @@ type Valute struct {
 	NumCode  int    `xml:"NumCode"`
 	CharCode string `xml:"CharCode"`
 	Value    string `xml:"Value"`
+}
+
+type OutputValute struct {
+	NumCode  int     `json:"num_code"`
+	CharCode string  `json:"char_code"`
+	Value    float64 `json:"value"`
 }
 
 func loadConfig(path string) (Config, error) {
@@ -97,6 +105,43 @@ func sortValutes(valutes []Valute) error {
 	return nil
 }
 
+func convertToOutput(valutes []Valute) ([]OutputValute, error) {
+	output := make([]OutputValute, 0, len(valutes))
+
+	for _, v := range valutes {
+		value, err := parseValue(v.Value)
+		if err != nil {
+			return nil, fmt.Errorf("parse value for %q: %w", v.CharCode, err)
+		}
+		output = append(output, OutputValute{
+			NumCode:  v.NumCode,
+			CharCode: v.CharCode,
+			Value:    value,
+		})
+	}
+
+	return output, nil
+}
+
+func saveJSON(path string, output []OutputValute) error {
+	data, err := json.MarshalIndent(output, "", "    ")
+	if err != nil {
+		return fmt.Errorf("marshal JSON: %w", err)
+	}
+
+	if dir := filepath.Dir(path); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			return fmt.Errorf("create dir %q: %w", dir, err)
+		}
+	}
+
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("write output-file %q: %w", path, err)
+	}
+
+	return nil
+}
+
 func main() {
 	configPath := flag.String("config", "", "path to config file")
 	flag.Parse()
@@ -115,8 +160,12 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("valutes:", len(valCurs.Valutes))
-	for _, v := range valCurs.Valutes {
-		fmt.Printf("%d %s %s\n", v.NumCode, v.CharCode, v.Value)
+	output, err := convertToOutput(valCurs.Valutes)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := saveJSON(config.OutputFile, output); err != nil {
+		panic(err)
 	}
 }
